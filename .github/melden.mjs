@@ -15,7 +15,9 @@ const key = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt: Buffer.from
 const lies = async (ref) => {
   let t; try { t = git("show", `${ref}:freigaben.json`); } catch { return {}; }
   const o = JSON.parse(t);
-  const pt = await webcrypto.subtle.decrypt({ name: "AES-GCM", iv: Buffer.from(o.iv, "base64") }, key, Buffer.from(o.data, "base64"));
+  let pt;
+  try { pt = await webcrypto.subtle.decrypt({ name: "AES-GCM", iv: Buffer.from(o.iv, "base64") }, key, Buffer.from(o.data, "base64")); }
+  catch (e) { if (ref === "gemeldet") return {}; throw e; } // alter Stand mit früherem Passwort verschlüsselt
   return JSON.parse(new TextDecoder().decode(pt)).items || {};
 };
 
