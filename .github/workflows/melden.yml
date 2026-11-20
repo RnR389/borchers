@@ -1,0 +1,34 @@
+# Meldet René, wenn Petra auf der Freigabe-Seite (rnr389.github.io/borchers) etwas freigibt oder zum Überarbeiten markiert.
+# Läuft bei jeder Änderung an freigaben.json, wartet 90 Sekunden (neue Änderungen brechen den Lauf ab und starten ihn neu),
+# vergleicht mit dem Stand der letzten Meldung (Tag „gemeldet“) und legt bei Änderungen von Petra eine Meldung an,
+# die @RnR389 erwähnt. GitHub schickt René dafür eine E-Mail. Die Meldung wird gleich wieder geschlossen.
+name: Rückmeldung an René melden
+on:
+  push:
+    branches: [daten]
+    paths: [freigaben.json]
+  workflow_dispatch:
+concurrency:
+  group: melden
+  cancel-in-progress: true
+permissions:
+  contents: write
+  issues: write
+jobs:
+  melden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: daten
+          fetch-depth: 0
+      - name: Kurz warten, bis Petra fertig ist
+        if: github.event_name == 'push'
+        run: sleep 90
+      - name: Rückmeldungen vergleichen und melden
+        run: node .github/melden.mjs
+        env:
+          SEITEN_PASSWORT: ${{ secrets.SEITEN_PASSWORT }}
+          SEITEN_SALZ: ${{ secrets.SEITEN_SALZ }}
+          GH_TOKEN: ${{ github.token }}
